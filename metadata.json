@@ -1,0 +1,6 @@
+{
+  "name": "Daily Habit & Nutrition Tracker",
+  "description": "Clean, minimalist single-page dashboard for daily habit checklists, nutrition tracking, and weekly streaks connecting to a local backend API.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

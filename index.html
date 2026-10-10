@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Habit & Nutrition Tracker</title>
+  <meta name="description" content="Clean, minimalist single-page dashboard for daily habit checklists, nutrition tracking, and weekly streaks connecting to a local backend API." />
+  <meta property="og:title" content="Daily Habit & Nutrition Tracker" />
+  <meta property="og:description" content="Clean, minimalist single-page dashboard for daily habit checklists, nutrition tracking, and weekly streaks connecting to a local backend API." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            zinc: {
+              850: '#1f2023',
+              925: '#111215',
+              950: '#0c0d0f',
+            },
+            emerald: {
+              450: '#10b981',
+              550: '#059669',
+            }
+          },
+          boxShadow: {
+            'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+            'card': '0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px -1px rgba(0, 0, 0, 0.03)',
+            'glow-emerald': '0 0 16px -2px rgba(16, 185, 129, 0.25)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Tabular numeric alignment */
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    /* Smooth transitions */
+    * {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    /* Custom checkbox tick animation */
+    .checkbox-tick {
+      stroke-dasharray: 20;
+      stroke-dashoffset: 20;
+      transition: stroke-dashoffset 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    input:checked ~ .checkbox-box .checkbox-tick {
+      stroke-dashoffset: 0;
+    }
+  </style>
+</head>
+<body class="h-full bg-[#fbfbfd] text-zinc-900 font-sans antialiased selection:bg-emerald-100 selection:text-emerald-900">
+
+  <!-- Top Announcement / Toast Bar -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none transition-all duration-300"></div>
+
+  <div class="min-h-full flex flex-col max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+
+    <!-- Top Bar: Brand, Scope & Backend Status -->
+    <header class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-8 border-b border-zinc-200/80 gap-4">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          K
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-bold tracking-tight text-zinc-900">Kinetics</h1>
+            <span class="text-xs font-mono text-zinc-600 bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200">v1.0</span>
+          </div>
+          <p class="text-xs text-zinc-500 mt-0.5">Daily habits, nutrition & weekly streaks</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5 self-end sm:self-auto">
+        <!-- API Connection Pill Button (Interactive) -->
+        <button id="btnOpenApiModal" type="button" class="group flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-200 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all text-xs font-mono text-zinc-700 shadow-sm" title="Configure Backend API endpoint">
+          <span id="apiStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span id="apiStatusText" class="truncate max-w-[150px] sm:max-w-[200px]">localhost:5000</span>
+          <svg class="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+
+        <!-- Save Button (Header) -->
+        <button id="btnHeaderSave" type="button" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] text-white rounded-lg text-xs font-semibold shadow-sm transition-all">
+          <svg id="headerSaveIcon" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+          <span id="headerSaveText">Save Day</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="space-y-8 flex-1">
+
+      <!-- ========================================== -->
+      <!-- 1. DATE NAVIGATOR (3-MONTH WINDOW)        -->
+      <!-- ========================================== -->
+      <section class="bg-white rounded-2xl border border-zinc-200/90 p-4 sm:p-6 shadow-sm">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+          
+          <!-- Previous Button -->
+          <button id="btnPrevDay" type="button" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 active:bg-zinc-100 text-xs font-semibold text-zinc-700 transition disabled:opacity-30 disabled:pointer-events-none shadow-xs group" title="Previous Day (Left Arrow)">
+            <svg class="w-4 h-4 text-zinc-500 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span>Previous</span>
+          </button>
+
+          <!-- Current Date Display & Picker -->
+          <div class="flex flex-col items-center text-center">
+            <div class="flex items-center gap-2">
+              <h2 id="displayDateFormatted" class="text-lg sm:text-xl font-bold tracking-tight text-zinc-900">
+                Loading date...
+              </h2>
+              <span id="relativeDayBadge" class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200/80">
+                Today
+              </span>
+            </div>
+
+            <!-- Date Picker & Jump to Today -->
+            <div class="flex items-center gap-2 mt-1.5 text-xs text-zinc-500">
+              <label for="datePickerInput" class="cursor-pointer hover:text-zinc-800 flex items-center gap-1 font-mono transition-colors">
+                <svg class="w-3.5 h-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <input id="datePickerInput" type="date" class="bg-transparent border-0 text-zinc-700 font-mono text-xs cursor-pointer focus:outline-none focus:ring-1 focus:ring-zinc-400 rounded px-1" />
+              </label>
+
+              <span class="text-zinc-300">·</span>
+
+              <button id="btnJumpToday" type="button" class="text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:underline transition-colors">
+                Jump to Today
+              </button>
+            </div>
+          </div>
+
+          <!-- Next Button -->
+          <button id="btnNextDay" type="button" class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 active:bg-zinc-100 text-xs font-semibold text-zinc-700 transition disabled:opacity-30 disabled:pointer-events-none shadow-xs group" title="Next Day (Right Arrow)">
+            <span>Next</span>
+            <svg class="w-4 h-4 text-zinc-500 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
+        </div>
+
+        <!-- 3-Month Window Bounds Helper -->
+        <div class="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-600 font-mono">
+          <span id="windowStartLabel">3 mo ago</span>
+          <span class="text-zinc-600">3-Month Logging Window (±90 Days)</span>
+          <span id="windowEndLabel">in 3 mo</span>
+        </div>
+      </section>
+
+
+      <!-- ========================================== -->
+      <!-- 2. SUMMARY & WEEKLY STREAK SECTION         -->
+      <!-- ========================================== -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold tracking-tight text-zinc-900 uppercase tracking-wider text-xs">
+            Weekly Targets & Streaks
+          </h3>
+          <span id="activeWeekRangeText" class="text-xs text-zinc-600 font-mono">Week of Sep 28 – Oct 4</span>
+        </div>
+
+        <!-- Metric Cards Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          <!-- Gym Weekly Target Card -->
+          <div class="bg-white rounded-2xl border border-zinc-200/90 p-5 shadow-sm relative overflow-hidden">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-xs font-semibold text-zinc-600">Gym Sessions</span>
+                <div class="flex items-baseline gap-2 mt-1">
+                  <span id="weeklyGymCount" class="text-3xl font-extrabold text-zinc-900 font-mono tabular-nums">0</span>
+                  <span class="text-sm text-zinc-600 font-mono">/ 4 target</span>
+                </div>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-700">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M3 18h18M7 6v12M17 6v12M5 10v4M19 10v4" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mt-4">
+              <div class="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
+                <div id="gymProgressBar" class="h-full bg-zinc-900 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-2.5 text-xs">
+              <span id="gymRemainingText" class="text-zinc-600">4 sessions left this week</span>
+              <span id="gymBadgeStatus" class="font-semibold text-zinc-700 font-mono">0%</span>
+            </div>
+          </div>
+
+          <!-- Running Weekly Target Card -->
+          <div class="bg-white rounded-2xl border border-zinc-200/90 p-5 shadow-sm relative overflow-hidden">
+            <div class="flex items-start justify-between">
+              <div>
+                <span class="text-xs font-semibold text-zinc-600">Running Sessions</span>
+                <div class="flex items-baseline gap-2 mt-1">
+                  <span id="weeklyRunningCount" class="text-3xl font-extrabold text-zinc-900 font-mono tabular-nums">0</span>
+                  <span class="text-sm text-zinc-600 font-mono">/ 3 target</span>
+                </div>
+              </div>
+              <div class="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-700">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="mt-4">
+              <div class="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
+                <div id="runningProgressBar" class="h-full bg-emerald-600 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-2.5 text-xs">
+              <span id="runningRemainingText" class="text-zinc-600">3 runs left this week</span>
+              <span id="runningBadgeStatus" class="font-semibold text-emerald-700 font-mono">0%</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 7-Day Week Strip (Interactive Navigator) -->
+        <div class="bg-white rounded-2xl border border-zinc-200/90 p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3 text-xs">
+            <span class="font-semibold text-zinc-700">7-Day Week Overview</span>
+            <span class="text-zinc-600">Click any day to jump & edit</span>
+          </div>
+
+          <div id="weekStripContainer" class="grid grid-cols-7 gap-1.5 sm:gap-2 text-center">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ========================================== -->
+      <!-- 3. DAILY CHECKLIST SECTION                 -->
+      <!-- ========================================== -->
+      <section class="bg-white rounded-2xl border border-zinc-200/90 p-5 sm:p-6 shadow-sm space-y-5">
+        <div class="flex items-center justify-between border-b border-zinc-100 pb-4">
+          <div>
+            <h3 class="text-base font-bold text-zinc-900 tracking-tight">Daily Checklist</h3>
+            <p class="text-xs text-zinc-500 mt-0.5">Toggle completion for each daily objective</p>
+          </div>
+          <div class="text-right">
+            <span id="checklistProgressText" class="text-xs font-mono font-semibold text-zinc-700">0 of 5 completed</span>
+            <div class="w-24 h-1.5 bg-zinc-100 rounded-full mt-1 overflow-hidden">
+              <div id="checklistProgressBar" class="h-full bg-emerald-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5 Checklist Items -->
+        <div class="space-y-2.5" id="checklistForm">
+
+          <!-- 1. Gym (Daily toggle) -->
+          <label for="chkGym" class="checklist-row flex items-center justify-between p-3.5 rounded-xl border border-zinc-200/80 hover:border-zinc-300 bg-zinc-50/50 hover:bg-zinc-50 transition cursor-pointer group">
+            <div class="flex items-center gap-3.5">
+              <div class="relative flex items-center">
+                <input id="chkGym" type="checkbox" class="sr-only peer" />
+                <div class="checkbox-box w-5 h-5 rounded-md border-2 border-zinc-300 peer-checked:border-zinc-900 peer-checked:bg-zinc-900 flex items-center justify-center transition-all">
+                  <svg class="w-3.5 h-3.5 text-white checkbox-tick" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <span class="text-sm font-semibold text-zinc-800 peer-checked:text-zinc-900 group-hover:text-zinc-950 transition-colors">Gym</span>
+                <p class="text-xs text-zinc-500">Weight training, resistance or calisthenics</p>
+              </div>
+            </div>
+            <!-- Pill state tag -->
+            <span class="habit-status-pill text-xs font-mono text-zinc-400 group-hover:text-zinc-600 transition-colors">Pending</span>
+          </label>
+
+          <!-- 2. Running (Daily toggle) -->
+          <label for="chkRunning" class="checklist-row flex items-center justify-between p-3.5 rounded-xl border border-zinc-200/80 hover:border-zinc-300 bg-zinc-50/50 hover:bg-zinc-50 transition cursor-pointer group">
+            <div class="flex items-center gap-3.5">
+              <div class="relative flex items-center">
+                <input id="chkRunning" type="checkbox" class="sr-only peer" />
+                <div class="checkbox-box w-5 h-5 rounded-md border-2 border-zinc-300 peer-checked:border-emerald-600 peer-checked:bg-emerald-600 flex items-center justify-center transition-all">
+                  <svg class="w-3.5 h-3.5 text-white checkbox-tick" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <span class="text-sm font-semibold text-zinc-800 peer-checked:text-zinc-900 group-hover:text-zinc-950 transition-colors">Running</span>
+                <p class="text-xs text-zinc-500">Endurance run, interval sprints, or cardio</p>
+              </div>
+            </div>
+            <span class="habit-status-pill text-xs font-mono text-zinc-400 group-hover:text-zinc-600 transition-colors">Pending</span>
+          </label>
+
+          <!-- 3. Coding (Daily toggle) -->
+          <label for="chkCoding" class="checklist-row flex items-center justify-between p-3.5 rounded-xl border border-zinc-200/80 hover:border-zinc-300 bg-zinc-50/50 hover:bg-zinc-50 transition cursor-pointer group">
+            <div class="flex items-center gap-3.5">
+              <div class="relative flex items-center">
+                <input id="chkCoding" type="checkbox" class="sr-only peer" />
+                <div class="checkbox-box w-5 h-5 rounded-md border-2 border-zinc-300 peer-checked:border-zinc-900 peer-checked:bg-zinc-900 flex items-center justify-center transition-all">
+                  <svg class="w-3.5 h-3.5 text-white checkbox-tick" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <span class="text-sm font-semibold text-zinc-800 peer-checked:text-zinc-900 group-hover:text-zinc-950 transition-colors">Coding</span>
+                <p class="text-xs text-zinc-500">Software engineering, PRs, features, or algorithms</p>
+              </div>
+            </div>
+            <span class="habit-status-pill text-xs font-mono text-zinc-400 group-hover:text-zinc-600 transition-colors">Pending</span>
+          </label>
+
+          <!-- 4. Studying (Daily toggle) -->
+          <label for="chkStudying" class="checklist-row flex items-center justify-between p-3.5 rounded-xl border border-zinc-200/80 hover:border-zinc-300 bg-zinc-50/50 hover:bg-zinc-50 transition cursor-pointer group">
+            <div class="flex items-center gap-3.5">
+              <div class="relative flex items-center">
+                <input id="chkStudying" type="checkbox" class="sr-only peer" />
+                <div class="checkbox-box w-5 h-5 rounded-md border-2 border-zinc-300 peer-checked:border-zinc-900 peer-checked:bg-zinc-900 flex items-center justify-center transition-all">
+                  <svg class="w-3.5 h-3.5 text-white checkbox-tick" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <span class="text-sm font-semibold text-zinc-800 peer-checked:text-zinc-900 group-hover:text-zinc-950 transition-colors">Studying</span>
+                <p class="text-xs text-zinc-500">Technical books, whitepapers, courses, or notes</p>
+              </div>
+            </div>
+            <span class="habit-status-pill text-xs font-mono text-zinc-400 group-hover:text-zinc-600 transition-colors">Pending</span>
+          </label>
+
+          <!-- 5. Extra Work (Daily toggle) -->
+          <label for="chkExtraWork" class="checklist-row flex items-center justify-between p-3.5 rounded-xl border border-zinc-200/80 hover:border-zinc-300 bg-zinc-50/50 hover:bg-zinc-50 transition cursor-pointer group">
+            <div class="flex items-center gap-3.5">
+              <div class="relative flex items-center">
+                <input id="chkExtraWork" type="checkbox" class="sr-only peer" />
+                <div class="checkbox-box w-5 h-5 rounded-md border-2 border-zinc-300 peer-checked:border-zinc-900 peer-checked:bg-zinc-900 flex items-center justify-center transition-all">
+                  <svg class="w-3.5 h-3.5 text-white checkbox-tick" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <span class="text-sm font-semibold text-zinc-800 peer-checked:text-zinc-900 group-hover:text-zinc-950 transition-colors">Extra Work</span>
+                <p class="text-xs text-zinc-500">High-priority side projects or deep focus overflow</p>
+              </div>
+            </div>
+            <span class="habit-status-pill text-xs font-mono text-zinc-400 group-hover:text-zinc-600 transition-colors">Pending</span>
+          </label>
+
+        </div>
+      </section>
+
+
+      <!-- ========================================== -->
+      <!-- 4. NUTRITION TRACKER SECTION               -->
+      <!-- ========================================== -->
+      <section class="bg-white rounded-2xl border border-zinc-200/90 p-5 sm:p-6 shadow-sm space-y-6">
+        <div class="border-b border-zinc-100 pb-4">
+          <h3 class="text-base font-bold text-zinc-900 tracking-tight">Nutrition Tracker</h3>
+          <p class="text-xs text-zinc-500 mt-0.5">Track daily macronutrients against targets</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          <!-- Protein Tracker (Goal: 100g) -->
+          <div class="p-4 rounded-xl border border-zinc-200 bg-zinc-50/40 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-zinc-900">Protein Intake</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-mono">
+                  Goal: 100g
+                </span>
+              </div>
+              <p class="text-xs text-zinc-500 mt-0.5">Essential for muscular recovery and retention</p>
+            </div>
+
+            <!-- Number Input & Unit -->
+            <div class="flex items-center gap-3">
+              <div class="relative flex-1">
+                <input
+                  id="numProtein"
+                  type="number"
+                  min="0"
+                  max="500"
+                  step="1"
+                  placeholder="0"
+                  class="w-full text-2xl font-bold font-mono tabular-nums px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 transition-all text-zinc-900 placeholder:text-zinc-300"
+                />
+                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold font-mono text-zinc-600">g</span>
+              </div>
+
+              <!-- Quick Increment Buttons -->
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" class="btn-quick-add-protein px-2.5 py-2 bg-white hover:bg-zinc-100 active:scale-95 border border-zinc-200 rounded-lg text-xs font-mono font-medium text-zinc-700 transition" data-amount="10">
+                  +10g
+                </button>
+                <button type="button" class="btn-quick-add-protein px-2.5 py-2 bg-white hover:bg-zinc-100 active:scale-95 border border-zinc-200 rounded-lg text-xs font-mono font-medium text-zinc-700 transition" data-amount="25">
+                  +25g
+                </button>
+              </div>
+            </div>
+
+            <!-- Protein Progress Bar & Status -->
+            <div>
+              <div class="h-2 w-full bg-zinc-200/70 rounded-full overflow-hidden">
+                <div id="proteinProgressBar" class="h-full bg-emerald-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <div class="flex items-center justify-between mt-2 text-xs font-mono text-zinc-600">
+                <span id="proteinStatusText">0g of 100g goal (0%)</span>
+                <span id="proteinRemainingText" class="font-medium text-zinc-700">100g left</span>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- Calories Tracker (Daily Limit Tracker) -->
+          <div class="p-4 rounded-xl border border-zinc-200 bg-zinc-50/40 flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-zinc-900">Calories Intake</span>
+                <div class="flex items-center gap-1 text-xs">
+                  <span class="text-zinc-500">Limit:</span>
+                  <input
+                    id="numCalorieLimit"
+                    type="number"
+                    value="2000"
+                    step="50"
+                    min="500"
+                    max="6000"
+                    class="w-16 px-1.5 py-0.5 text-right font-mono font-semibold bg-white border border-zinc-200 rounded text-xs focus:ring-1 focus:ring-zinc-700"
+                    title="Click to edit daily calorie target limit"
+                  />
+                  <span class="font-mono text-zinc-500">kcal</span>
+                </div>
+              </div>
+              <p class="text-xs text-zinc-500 mt-0.5">Daily energy budget tracker</p>
+            </div>
+
+            <!-- Number Input & Unit -->
+            <div class="flex items-center gap-3">
+              <div class="relative flex-1">
+                <input
+                  id="numCalories"
+                  type="number"
+                  min="0"
+                  max="10000"
+                  step="10"
+                  placeholder="0"
+                  class="w-full text-2xl font-bold font-mono tabular-nums px-3.5 py-2.5 bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 transition-all text-zinc-900 placeholder:text-zinc-300"
+                />
+                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold font-mono text-zinc-600">kcal</span>
+              </div>
+
+              <!-- Quick Increment Buttons -->
+              <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" class="btn-quick-add-calorie px-2 py-2 bg-white hover:bg-zinc-100 active:scale-95 border border-zinc-200 rounded-lg text-xs font-mono font-medium text-zinc-700 transition" data-amount="100">
+                  +100
+                </button>
+                <button type="button" class="btn-quick-add-calorie px-2 py-2 bg-white hover:bg-zinc-100 active:scale-95 border border-zinc-200 rounded-lg text-xs font-mono font-medium text-zinc-700 transition" data-amount="250">
+                  +250
+                </button>
+              </div>
+            </div>
+
+            <!-- Calorie Progress Bar & Status -->
+            <div>
+              <div class="h-2 w-full bg-zinc-200/70 rounded-full overflow-hidden">
+                <div id="calorieProgressBar" class="h-full bg-zinc-900 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <div class="flex items-center justify-between mt-2 text-xs font-mono text-zinc-600">
+                <span id="calorieStatusText">0 / 2000 kcal (0%)</span>
+                <span id="calorieRemainingText" class="font-medium text-zinc-700">2000 kcal budget</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+
+      <!-- ========================================== -->
+      <!-- 5. DAILY NOTES & REFLECTION SECTION        -->
+      <!-- ========================================== -->
+      <section class="bg-white rounded-2xl border border-zinc-200/90 p-5 sm:p-6 shadow-sm space-y-4">
+        <div class="flex items-center justify-between border-b border-zinc-100 pb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-700">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-zinc-900 tracking-tight">Daily Notes & Reflections</h3>
+              <p class="text-xs text-zinc-500">Record workouts, focus areas, personal wins, or thoughts for this day</p>
+            </div>
+          </div>
+          
+          <!-- Character & Word counts -->
+          <div class="flex items-center gap-2 text-xs font-mono text-zinc-400">
+            <span id="notesCountText">0 words · 0 chars</span>
+          </div>
+        </div>
+
+        <!-- Textarea -->
+        <div class="space-y-2">
+          <div class="relative">
+            <textarea
+              id="txtDailyNotes"
+              rows="4"
+              placeholder="How was today? Log your workout highlights, diet notes, coding milestones, or reflections..."
+              class="w-full px-3.5 py-3 text-sm bg-zinc-50/60 hover:bg-zinc-50 focus:bg-white border border-zinc-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-zinc-900 transition-all text-zinc-900 placeholder:text-zinc-400 resize-y leading-relaxed font-sans"
+            ></textarea>
+          </div>
+
+          <!-- Quick Starter Prompts / Action Chips -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-[11px] text-zinc-400 font-medium">Quick insert:</span>
+              <button type="button" class="btn-note-tag px-2.5 py-1 rounded-md bg-zinc-100 hover:bg-zinc-200/80 active:scale-95 text-zinc-700 font-mono text-[11px] transition" data-insert="🏋️ Workout: ">
+                + Workout
+              </button>
+              <button type="button" class="btn-note-tag px-2.5 py-1 rounded-md bg-zinc-100 hover:bg-zinc-200/80 active:scale-95 text-zinc-700 font-mono text-[11px] transition" data-insert="⚡ Energy & Mood: ">
+                + Energy
+              </button>
+              <button type="button" class="btn-note-tag px-2.5 py-1 rounded-md bg-zinc-100 hover:bg-zinc-200/80 active:scale-95 text-zinc-700 font-mono text-[11px] transition" data-insert="🏆 Win: ">
+                + Win
+              </button>
+              <button type="button" class="btn-note-tag px-2.5 py-1 rounded-md bg-zinc-100 hover:bg-zinc-200/80 active:scale-95 text-zinc-700 font-mono text-[11px] transition" data-insert="🎯 Tomorrow: ">
+                + Priority
+              </button>
+            </div>
+
+            <button id="btnClearNote" type="button" class="text-[11px] text-zinc-400 hover:text-rose-600 transition-colors">
+              Clear note
+            </button>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ========================================== -->
+      <!-- 6. SAVE & SYNC FOOTER BAR                  -->
+      <!-- ========================================== -->
+      <section class="bg-white rounded-2xl border border-zinc-200/90 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div id="saveStatusIndicator" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+          <div>
+            <p id="saveStatusText" class="text-xs font-semibold text-zinc-800">All changes saved</p>
+            <p id="saveSubtext" class="text-[11px] text-zinc-500 font-mono">Changes auto-save automatically</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <!-- Reset / Clear Day button -->
+          <button id="btnClearDay" type="button" class="flex-1 sm:flex-initial px-3.5 py-2.5 border border-zinc-200 hover:bg-zinc-50 active:bg-zinc-100 rounded-xl text-xs font-semibold text-zinc-600 transition">
+            Reset Day
+          </button>
+
+          <!-- Primary Save Day Button -->
+          <button id="btnSaveDay" type="button" class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 active:scale-[0.98] text-white rounded-xl text-xs font-semibold shadow-sm transition-all">
+            <svg id="saveDaySpinner" class="hidden w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <svg id="saveDayIcon" class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span id="saveDayLabel">Save Day</span>
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer Copyright & Info -->
+    <footer class="mt-12 pt-6 border-t border-zinc-200/60 text-center text-xs text-zinc-500 font-mono flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span>Daily Habit & Nutrition Tracker · Single-Page Frontend</span>
+      <span class="text-zinc-600">Connected to <span class="font-semibold text-zinc-700" id="footerBackendLabel">localhost:5000</span></span>
+    </footer>
+
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- MODAL: BACKEND API CONFIGURATION & DEV TOOLS                   -->
+  <!-- ============================================================== -->
+  <div id="apiConfigModal" class="hidden fixed inset-0 z-50 bg-zinc-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full border border-zinc-200 shadow-xl overflow-hidden p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      
+      <div class="flex items-center justify-between border-b border-zinc-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-800">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
+            </svg>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-zinc-900">Backend API Settings</h4>
+            <p class="text-[11px] text-zinc-500">Configure connection to your local service</p>
+          </div>
+        </div>
+        <button id="btnCloseApiModal" type="button" class="text-zinc-400 hover:text-zinc-700 p-1 rounded-lg hover:bg-zinc-100 transition">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label for="inputApiBaseUrl" class="block text-xs font-semibold text-zinc-700 mb-1">
+            API Base URL
+          </label>
+          <input
+            id="inputApiBaseUrl"
+            type="text"
+            value="http://localhost:5000"
+            class="w-full px-3 py-2 text-xs font-mono bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 text-zinc-900"
+            placeholder="http://localhost:5000 or /api"
+          />
+          <p class="text-[11px] text-zinc-600 mt-1">
+            Endpoints used: <code class="font-mono text-zinc-600 font-semibold">GET /api/logs/:date</code> & <code class="font-mono text-zinc-600 font-semibold">POST /api/logs</code>
+          </p>
+        </div>
+
+        <!-- Preset buttons -->
+        <div class="flex items-center gap-2">
+          <span class="text-[11px] text-zinc-500">Presets:</span>
+          <button type="button" class="btn-api-preset px-2 py-1 bg-zinc-100 hover:bg-zinc-200 rounded text-[11px] font-mono text-zinc-700 transition" data-url="http://localhost:5000">localhost:5000</button>
+          <button type="button" class="btn-api-preset px-2 py-1 bg-zinc-100 hover:bg-zinc-200 rounded text-[11px] font-mono text-zinc-700 transition" data-url="http://127.0.0.1:5000">127.0.0.1:5000</button>
+          <button type="button" class="btn-api-preset px-2 py-1 bg-zinc-100 hover:bg-zinc-200 rounded text-[11px] font-mono text-zinc-700 transition" data-url="/api">/api (proxy)</button>
+        </div>
+
+        <!-- Connection Test Output -->
+        <div id="connectionTestResult" class="hidden p-3 rounded-lg border text-xs font-mono"></div>
+
+        <div class="pt-2 flex flex-col gap-2">
+          <div class="flex items-center gap-2">
+            <button id="btnTestConnection" type="button" class="flex-1 px-3 py-2 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-xs font-semibold text-zinc-800 transition">
+              Test Connection
+            </button>
+            <button id="btnSaveApiConfig" type="button" class="flex-1 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold transition">
+              Save & Reconnect
+            </button>
+          </div>
+
+          <!-- Demo week populator -->
+          <div class="border-t border-zinc-100 pt-3">
+            <p class="text-[11px] text-zinc-500 mb-2">Want to test streaks without a backend?</p>
+            <button id="btnSeedDemoWeek" type="button" class="w-full px-3 py-2 border border-zinc-200 hover:bg-zinc-50 rounded-lg text-xs font-medium text-zinc-700 transition flex items-center justify-center gap-1.5">
+              <span>Seed Realistic Demo Logs for this Week</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- VANILLA JAVASCRIPT APPLICATION CORE LOGIC                      -->
+  <!-- ============================================================== -->
+  <script>
+    (function() {
+      'use strict';
+
+      // -------------------------------------------------------------
+      // Configuration & State
+      // -------------------------------------------------------------
+      const STORAGE_KEY_API = 'kinetics_api_base_url';
+      const STORAGE_KEY_LOGS = 'kinetics_cached_logs';
+      const STORAGE_KEY_CALORIE_LIMIT = 'kinetics_calorie_limit';
+
+      // Default API base as requested: http://localhost:5000
+      let apiBaseUrl = localStorage.getItem(STORAGE_KEY_API) || 'http://localhost:5000';
+      let isBackendReachable = false;
+      let isSaving = false;
+      let debounceSaveTimeout = null;
+
+      // 3-Month Window Bounds (±90 Days)
+      const TODAY = new Date();
+      TODAY.setHours(0, 0, 0, 0);
+
+      const MIN_DATE = new Date(TODAY);
+      MIN_DATE.setDate(MIN_DATE.getDate() - 90);
+
+      const MAX_DATE = new Date(TODAY);
+      MAX_DATE.setDate(MAX_DATE.getDate() + 90);
+
+      // Active state
+      let currentDate = new Date(TODAY);
+      let currentLog = {
+        date: formatDateString(TODAY),
+        gym: false,
+        running: false,
+        coding: false,
+        studying: false,
+        extraWork: false,
+        protein: 0,
+        calories: 0,
+        notes: ''
+      };
+
+      // In-memory cache for fast local persistence / fallback
+      let localLogsCache = {};
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY_LOGS);
+        if (raw) localLogsCache = JSON.parse(raw);
+      } catch (e) {
+        console.warn('Failed to load local logs cache', e);
+      }
+
+      // DOM Elements
+      const els = {
+        displayDateFormatted: document.getElementById('displayDateFormatted'),
+        relativeDayBadge: document.getElementById('relativeDayBadge'),
+        datePickerInput: document.getElementById('datePickerInput'),
+        btnPrevDay: document.getElementById('btnPrevDay'),
+        btnNextDay: document.getElementById('btnNextDay'),
+        btnJumpToday: document.getElementById('btnJumpToday'),
+        windowStartLabel: document.getElementById('windowStartLabel'),
+        windowEndLabel: document.getElementById('windowEndLabel'),
+
+        // Habit Checkboxes
+        chkGym: document.getElementById('chkGym'),
+        chkRunning: document.getElementById('chkRunning'),
+        chkCoding: document.getElementById('chkCoding'),
+        chkStudying: document.getElementById('chkStudying'),
+        chkExtraWork: document.getElementById('chkExtraWork'),
+
+        // Nutrition
+        numProtein: document.getElementById('numProtein'),
+        numCalories: document.getElementById('numCalories'),
+        numCalorieLimit: document.getElementById('numCalorieLimit'),
+        proteinProgressBar: document.getElementById('proteinProgressBar'),
+        proteinStatusText: document.getElementById('proteinStatusText'),
+        proteinRemainingText: document.getElementById('proteinRemainingText'),
+        calorieProgressBar: document.getElementById('calorieProgressBar'),
+        calorieStatusText: document.getElementById('calorieStatusText'),
+        calorieRemainingText: document.getElementById('calorieRemainingText'),
+
+        // Daily Notes
+        txtDailyNotes: document.getElementById('txtDailyNotes'),
+        notesCountText: document.getElementById('notesCountText'),
+        btnClearNote: document.getElementById('btnClearNote'),
+
+        // Checklist summary
+        checklistProgressText: document.getElementById('checklistProgressText'),
+        checklistProgressBar: document.getElementById('checklistProgressBar'),
+
+        // Weekly Streaks
+        weeklyGymCount: document.getElementById('weeklyGymCount'),
+        gymProgressBar: document.getElementById('gymProgressBar'),
+        gymRemainingText: document.getElementById('gymRemainingText'),
+        gymBadgeStatus: document.getElementById('gymBadgeStatus'),
+        weeklyRunningCount: document.getElementById('weeklyRunningCount'),
+        runningProgressBar: document.getElementById('runningProgressBar'),
+        runningRemainingText: document.getElementById('runningRemainingText'),
+        runningBadgeStatus: document.getElementById('runningBadgeStatus'),
+        activeWeekRangeText: document.getElementById('activeWeekRangeText'),
+        weekStripContainer: document.getElementById('weekStripContainer'),
+
+        // Save & Status
+        btnSaveDay: document.getElementById('btnSaveDay'),
+        saveDaySpinner: document.getElementById('saveDaySpinner'),
+        saveDayIcon: document.getElementById('saveDayIcon'),
+        saveDayLabel: document.getElementById('saveDayLabel'),
+        saveStatusIndicator: document.getElementById('saveStatusIndicator'),
+        saveStatusText: document.getElementById('saveStatusText'),
+        saveSubtext: document.getElementById('saveSubtext'),
+        btnClearDay: document.getElementById('btnClearDay'),
+        btnHeaderSave: document.getElementById('btnHeaderSave'),
+        headerSaveText: document.getElementById('headerSaveText'),
+
+        // API Status & Modal
+        btnOpenApiModal: document.getElementById('btnOpenApiModal'),
+        apiStatusDot: document.getElementById('apiStatusDot'),
+        apiStatusText: document.getElementById('apiStatusText'),
+        footerBackendLabel: document.getElementById('footerBackendLabel'),
+        apiConfigModal: document.getElementById('apiConfigModal'),
+        btnCloseApiModal: document.getElementById('btnCloseApiModal'),
+        inputApiBaseUrl: document.getElementById('inputApiBaseUrl'),
+        btnSaveApiConfig: document.getElementById('btnSaveApiConfig'),
+        btnTestConnection: document.getElementById('btnTestConnection'),
+        connectionTestResult: document.getElementById('connectionTestResult'),
+        btnSeedDemoWeek: document.getElementById('btnSeedDemoWeek'),
+        toastContainer: document.getElementById('toastContainer'),
+      };
+
+      // -------------------------------------------------------------
+      // Helper Functions: Date & String
+      // -------------------------------------------------------------
+      function formatDateString(d) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+
+      function parseDateString(str) {
+        const [y, m, d] = str.split('-').map(Number);
+        const date = new Date(y, m - 1, d);
+        date.setHours(0, 0, 0, 0);
+        return date;
+      }
+
+      function getRelativeDayString(targetDate) {
+        const diffTime = targetDate.getTime() - TODAY.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays === 0) return 'Today';
+        if (diffDays === -1) return 'Yesterday';
+        if (diffDays === 1) return 'Tomorrow';
+        if (diffDays < 0) return `${Math.abs(diffDays)}d ago`;
+        return `in ${diffDays}d`;
+      }
+
+      function getStartOfWeek(date) {
+        // Monday as first day of week
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        d.setDate(diff);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+
+      function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        const bg = type === 'success' ? 'bg-zinc-900 text-white' : type === 'error' ? 'bg-rose-900 text-white' : 'bg-zinc-800 text-white';
+        toast.className = `${bg} px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 transform translate-y-2 opacity-0 transition-all duration-200 pointer-events-auto border border-white/10`;
+        toast.innerHTML = `
+          <span>${message}</span>
+        `;
+        els.toastContainer.appendChild(toast);
+        requestAnimationFrame(() => {
+          toast.classList.remove('translate-y-2', 'opacity-0');
+        });
+        setTimeout(() => {
+          toast.classList.add('opacity-0', '-translate-y-2');
+          setTimeout(() => toast.remove(), 250);
+        }, 3200);
+      }
+
+      // -------------------------------------------------------------
+      // UI Updates & Rendering
+      // -------------------------------------------------------------
+      function updateDateNavigatorUI() {
+        const dateStr = formatDateString(currentDate);
+        const options = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+        els.displayDateFormatted.textContent = currentDate.toLocaleDateString('en-US', options);
+
+        const rel = getRelativeDayString(currentDate);
+        els.relativeDayBadge.textContent = rel;
+        if (rel === 'Today') {
+          els.relativeDayBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80';
+          els.btnJumpToday.classList.add('opacity-40', 'pointer-events-none');
+        } else {
+          els.relativeDayBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200/80';
+          els.btnJumpToday.classList.remove('opacity-40', 'pointer-events-none');
+        }
+
+        els.datePickerInput.value = dateStr;
+
+        // Bounds checks
+        const isAtMin = currentDate.getTime() <= MIN_DATE.getTime();
+        const isAtMax = currentDate.getTime() >= MAX_DATE.getTime();
+        els.btnPrevDay.disabled = isAtMin;
+        els.btnNextDay.disabled = isAtMax;
+      }
+
+      function updateChecklistUI() {
+        els.chkGym.checked = Boolean(currentLog.gym);
+        els.chkRunning.checked = Boolean(currentLog.running);
+        els.chkCoding.checked = Boolean(currentLog.coding);
+        els.chkStudying.checked = Boolean(currentLog.studying);
+        els.chkExtraWork.checked = Boolean(currentLog.extraWork);
+
+        // Update row styling
+        const items = [
+          { el: els.chkGym, completed: currentLog.gym },
+          { el: els.chkRunning, completed: currentLog.running },
+          { el: els.chkCoding, completed: currentLog.coding },
+          { el: els.chkStudying, completed: currentLog.studying },
+          { el: els.chkExtraWork, completed: currentLog.extraWork },
+        ];
+
+        let completedCount = 0;
+        items.forEach(({ el, completed }) => {
+          const row = el.closest('.checklist-row');
+          const pill = row.querySelector('.habit-status-pill');
+          if (completed) {
+            completedCount++;
+            row.classList.add('bg-emerald-50/40', 'border-emerald-200/90');
+            row.classList.remove('bg-zinc-50/50', 'border-zinc-200/80');
+            pill.textContent = 'Completed';
+            pill.className = 'habit-status-pill text-xs font-mono font-semibold text-emerald-600';
+          } else {
+            row.classList.remove('bg-emerald-50/40', 'border-emerald-200/90');
+            row.classList.add('bg-zinc-50/50', 'border-zinc-200/80');
+            pill.textContent = 'Pending';
+            pill.className = 'habit-status-pill text-xs font-mono text-zinc-400 group-hover:text-zinc-600 transition-colors';
+          }
+        });
+
+        const pct = Math.round((completedCount / 5) * 100);
+        els.checklistProgressText.textContent = `${completedCount} of 5 completed (${pct}%)`;
+        els.checklistProgressBar.style.width = `${pct}%`;
+      }
+
+      function updateNutritionUI() {
+        const protein = Number(currentLog.protein) || 0;
+        const calories = Number(currentLog.calories) || 0;
+        const calorieLimit = Number(els.numCalorieLimit.value) || 2000;
+
+        els.numProtein.value = protein > 0 ? protein : '';
+        els.numCalories.value = calories > 0 ? calories : '';
+
+        // Protein (Goal: 100g)
+        const proteinGoal = 100;
+        const proteinPct = Math.min(100, Math.round((protein / proteinGoal) * 100));
+        els.proteinProgressBar.style.width = `${proteinPct}%`;
+        els.proteinStatusText.textContent = `${protein}g of ${proteinGoal}g goal (${proteinPct}%)`;
+
+        if (protein >= proteinGoal) {
+          const surplus = protein - proteinGoal;
+          els.proteinRemainingText.textContent = surplus > 0 ? `+${surplus}g surplus 🎉` : 'Goal achieved!';
+          els.proteinRemainingText.className = 'font-semibold text-emerald-600 font-mono';
+        } else {
+          const remaining = proteinGoal - protein;
+          els.proteinRemainingText.textContent = `${remaining}g left`;
+          els.proteinRemainingText.className = 'font-medium text-zinc-700 font-mono';
+        }
+
+        // Calories (Daily limit tracker)
+        const calPct = Math.min(100, Math.round((calories / calorieLimit) * 100));
+        els.calorieProgressBar.style.width = `${calPct}%`;
+        els.calorieStatusText.textContent = `${calories.toLocaleString()} / ${calorieLimit.toLocaleString()} kcal (${calPct}%)`;
+
+        if (calories > calorieLimit) {
+          const over = calories - calorieLimit;
+          els.calorieRemainingText.textContent = `+${over.toLocaleString()} kcal over limit`;
+          els.calorieRemainingText.className = 'font-semibold text-rose-600 font-mono';
+          els.calorieProgressBar.className = 'h-full bg-rose-600 rounded-full transition-all duration-300';
+        } else {
+          const remaining = calorieLimit - calories;
+          els.calorieRemainingText.textContent = `${remaining.toLocaleString()} kcal budget`;
+          els.calorieRemainingText.className = 'font-medium text-zinc-700 font-mono';
+          els.calorieProgressBar.className = 'h-full bg-zinc-900 rounded-full transition-all duration-300';
+        }
+      }
+
+      function updateNotesUI() {
+        const note = currentLog.notes || '';
+        els.txtDailyNotes.value = note;
+        updateNotesCountUI(note);
+      }
+
+      function updateNotesCountUI(text) {
+        const str = text || '';
+        const chars = str.length;
+        const trimmed = str.trim();
+        const words = trimmed ? trimmed.split(/\s+/).length : 0;
+        els.notesCountText.textContent = `${words} ${words === 1 ? 'word' : 'words'} · ${chars} chars`;
+      }
+
+      function updateWeeklySummaryUI(weeklyData = null) {
+        const startOfWeek = getStartOfWeek(currentDate);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+        // Display range text
+        const startMonth = startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const endMonth = endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        els.activeWeekRangeText.textContent = `Week of ${startMonth} – ${endMonth}`;
+
+        // Compute 7 days of the active week from local logs cache or weeklyData
+        let gymCount = 0;
+        let runningCount = 0;
+        const weekDays = [];
+
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(startOfWeek);
+          d.setDate(startOfWeek.getDate() + i);
+          const dateStr = formatDateString(d);
+
+          // Get day log (current active log takes priority for the selected date)
+          let entry = (dateStr === formatDateString(currentDate)) ? currentLog : (localLogsCache[dateStr] || {});
+          if (weeklyData && weeklyData.weekLogs && weeklyData.weekLogs[dateStr]) {
+            entry = Object.assign({}, weeklyData.weekLogs[dateStr], entry);
+          }
+
+          const hasGym = Boolean(entry.gym);
+          const hasRunning = Boolean(entry.running);
+
+          if (hasGym) gymCount++;
+          if (hasRunning) runningCount++;
+
+          weekDays.push({
+            date: d,
+            dateStr: dateStr,
+            isCurrentSelected: dateStr === formatDateString(currentDate),
+            isToday: dateStr === formatDateString(TODAY),
+            hasGym,
+            hasRunning
+          });
+        }
+
+        // Render Gym Target (Target: 4/week)
+        const gymTarget = 4;
+        const gymProgressPct = Math.min(100, Math.round((gymCount / gymTarget) * 100));
+        els.weeklyGymCount.textContent = gymCount;
+        els.gymProgressBar.style.width = `${gymProgressPct}%`;
+        els.gymBadgeStatus.textContent = `${gymProgressPct}%`;
+
+        if (gymCount >= gymTarget) {
+          els.gymRemainingText.textContent = 'Weekly target achieved! 🎉';
+          els.gymRemainingText.className = 'font-semibold text-emerald-600';
+          els.gymProgressBar.className = 'h-full bg-emerald-600 rounded-full transition-all duration-500';
+        } else {
+          const remaining = gymTarget - gymCount;
+          els.gymRemainingText.textContent = `${remaining} ${remaining === 1 ? 'session' : 'sessions'} left this week`;
+          els.gymRemainingText.className = 'text-zinc-600';
+          els.gymProgressBar.className = 'h-full bg-zinc-900 rounded-full transition-all duration-500';
+        }
+
+        // Render Running Target (Target: 3/week)
+        const runningTarget = 3;
+        const runningProgressPct = Math.min(100, Math.round((runningCount / runningTarget) * 100));
+        els.weeklyRunningCount.textContent = runningCount;
+        els.runningProgressBar.style.width = `${runningProgressPct}%`;
+        els.runningBadgeStatus.textContent = `${runningProgressPct}%`;
+
+        if (runningCount >= runningTarget) {
+          els.runningRemainingText.textContent = 'Weekly target achieved! 🏃';
+          els.runningRemainingText.className = 'font-semibold text-emerald-600';
+        } else {
+          const remaining = runningTarget - runningCount;
+          els.runningRemainingText.textContent = `${remaining} ${remaining === 1 ? 'run' : 'runs'} left this week`;
+          els.runningRemainingText.className = 'text-zinc-600';
+        }
+
+        // Render 7-day strip
+        els.weekStripContainer.innerHTML = '';
+        weekDays.forEach(dayItem => {
+          const dayName = dayItem.date.toLocaleDateString('en-US', { weekday: 'narrow' });
+          const dayNum = dayItem.date.getDate();
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `group flex flex-col items-center justify-between py-2 px-1 rounded-xl transition-all border ${
+            dayItem.isCurrentSelected
+              ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm'
+              : 'bg-zinc-50/60 hover:bg-zinc-100 text-zinc-700 border-zinc-200/70'
+          }`;
+
+          btn.title = `${dayItem.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`;
+
+          btn.innerHTML = `
+            <span class="text-[10px] font-bold ${dayItem.isCurrentSelected ? 'text-zinc-400' : 'text-zinc-600'}">${dayName}</span>
+            <span class="text-sm font-bold font-mono my-0.5 ${dayItem.isCurrentSelected ? 'text-white' : 'text-zinc-900'}">${dayNum}</span>
+            <div class="flex items-center gap-1 h-2">
+              <span class="w-1.5 h-1.5 rounded-full ${dayItem.hasGym ? (dayItem.isCurrentSelected ? 'bg-emerald-400' : 'bg-zinc-900') : 'bg-transparent'}" title="${dayItem.hasGym ? 'Gym completed' : ''}"></span>
+              <span class="w-1.5 h-1.5 rounded-full ${dayItem.hasRunning ? (dayItem.isCurrentSelected ? 'bg-emerald-300' : 'bg-emerald-500') : 'bg-transparent'}" title="${dayItem.hasRunning ? 'Running completed' : ''}"></span>
+            </div>
+          `;
+
+          btn.addEventListener('click', () => {
+            selectDate(dayItem.date);
+          });
+
+          els.weekStripContainer.appendChild(btn);
+        });
+      }
+
+      function updateBackendStatusUI() {
+        const displayHost = apiBaseUrl.replace(/^https?:\/\//, '');
+        els.apiStatusText.textContent = displayHost;
+        els.footerBackendLabel.textContent = displayHost;
+
+        if (isBackendReachable) {
+          els.apiStatusDot.className = 'w-2 h-2 rounded-full bg-emerald-500 shadow-glow-emerald';
+          els.saveSubtext.textContent = `Connected to ${displayHost}`;
+        } else {
+          els.apiStatusDot.className = 'w-2 h-2 rounded-full bg-amber-400';
+          els.saveSubtext.textContent = `Backend offline (${displayHost}) · Saved locally`;
+        }
+      }
+
+      // -------------------------------------------------------------
+      // API Network Calls & Synchronization
+      // -------------------------------------------------------------
+      async function fetchDateLog(dateStr) {
+        setSaveIndicatorState('loading', 'Loading day data...');
+        try {
+          const endpoint = `${apiBaseUrl.replace(/\/+$/, '')}/api/logs/${dateStr}`;
+          const res = await fetch(endpoint, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            signal: AbortSignal.timeout(3500)
+          });
+
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          isBackendReachable = true;
+
+          // Merge loaded data
+          currentLog = {
+            date: dateStr,
+            gym: Boolean(data.gym),
+            running: Boolean(data.running),
+            coding: Boolean(data.coding),
+            studying: Boolean(data.studying),
+            extraWork: Boolean(data.extraWork ?? data.extra_work),
+            protein: Number(data.protein) || 0,
+            calories: Number(data.calories) || 0,
+            notes: typeof data.notes === 'string' ? data.notes : ''
+          };
+
+          // Cache in local storage
+          localLogsCache[dateStr] = currentLog;
+          saveLocalCache();
+
+          setSaveIndicatorState('saved', 'Synced with backend');
+          updateChecklistUI();
+          updateNutritionUI();
+          updateNotesUI();
+          updateWeeklySummaryUI(data.weeklyStats);
+          updateBackendStatusUI();
+
+        } catch (err) {
+          console.warn('Backend fetch failed, using local cache:', err.message);
+          isBackendReachable = false;
+          updateBackendStatusUI();
+
+          // Fallback to local storage
+          if (localLogsCache[dateStr]) {
+            currentLog = Object.assign({ date: dateStr, notes: '' }, localLogsCache[dateStr]);
+          } else {
+            currentLog = {
+              date: dateStr,
+              gym: false,
+              running: false,
+              coding: false,
+              studying: false,
+              extraWork: false,
+              protein: 0,
+              calories: 0,
+              notes: ''
+            };
+          }
+
+          updateChecklistUI();
+          updateNutritionUI();
+          updateNotesUI();
+          updateWeeklySummaryUI();
+          setSaveIndicatorState('saved', 'Loaded from local storage (Offline)');
+        }
+      }
+
+      async function saveCurrentLog(isManual = false) {
+        if (isSaving) return;
+        isSaving = true;
+
+        const dateStr = formatDateString(currentDate);
+        currentLog.date = dateStr;
+        currentLog.gym = els.chkGym.checked;
+        currentLog.running = els.chkRunning.checked;
+        currentLog.coding = els.chkCoding.checked;
+        currentLog.studying = els.chkStudying.checked;
+        currentLog.extraWork = els.chkExtraWork.checked;
+        currentLog.protein = Number(els.numProtein.value) || 0;
+        currentLog.calories = Number(els.numCalories.value) || 0;
+        currentLog.notes = els.txtDailyNotes.value || '';
+
+        // Immediately update local cache so weekly streaks reflect state in real time
+        localLogsCache[dateStr] = { ...currentLog };
+        saveLocalCache();
+        updateWeeklySummaryUI();
+
+        // UI Saving State
+        setSaveButtonState(true);
+        setSaveIndicatorState('loading', 'Saving day changes...');
+
+        try {
+          const endpoint = `${apiBaseUrl.replace(/\/+$/, '')}/api/logs`;
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(currentLog),
+            signal: AbortSignal.timeout(4000)
+          });
+
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const result = await res.json();
+          isBackendReachable = true;
+          updateBackendStatusUI();
+
+          setSaveIndicatorState('saved', `Saved to ${apiBaseUrl.replace(/^https?:\/\//, '')}`);
+          if (isManual) {
+            showToast('Day saved successfully to backend!', 'success');
+          }
+
+          if (result.weeklyStats) {
+            updateWeeklySummaryUI(result.weeklyStats);
+          }
+
+        } catch (err) {
+          console.warn('Backend save failed, saved locally:', err.message);
+          isBackendReachable = false;
+          updateBackendStatusUI();
+
+          setSaveIndicatorState('saved', 'Saved locally (Backend offline)');
+          if (isManual) {
+            showToast('Backend offline: Changes saved safely in browser storage', 'info');
+          }
+        } finally {
+          isSaving = false;
+          setSaveButtonState(false);
+        }
+      }
+
+      function scheduleAutoSave() {
+        setSaveIndicatorState('unsaved', 'Unsaved changes...');
+        clearTimeout(debounceSaveTimeout);
+        debounceSaveTimeout = setTimeout(() => {
+          saveCurrentLog(false);
+        }, 400);
+      }
+
+      function saveLocalCache() {
+        try {
+          localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(localLogsCache));
+        } catch (e) {
+          console.error('Failed to write to localStorage', e);
+        }
+      }
+
+      function setSaveIndicatorState(state, text) {
+        els.saveStatusText.textContent = text;
+        if (state === 'loading') {
+          els.saveStatusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping';
+        } else if (state === 'saved') {
+          els.saveStatusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
+        } else {
+          els.saveStatusIndicator.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
+        }
+      }
+
+      function setSaveButtonState(loading) {
+        if (loading) {
+          els.saveDaySpinner.classList.remove('hidden');
+          els.saveDayIcon.classList.add('hidden');
+          els.saveDayLabel.textContent = 'Saving...';
+          els.headerSaveText.textContent = 'Saving...';
+          els.btnSaveDay.disabled = true;
+          els.btnHeaderSave.disabled = true;
+        } else {
+          els.saveDaySpinner.classList.add('hidden');
+          els.saveDayIcon.classList.remove('hidden');
+          els.saveDayLabel.textContent = 'Save Day';
+          els.headerSaveText.textContent = 'Save Day';
+          els.btnSaveDay.disabled = false;
+          els.btnHeaderSave.disabled = false;
+        }
+      }
+
+      // -------------------------------------------------------------
+      // Navigation Actions
+      // -------------------------------------------------------------
+      function selectDate(newDate) {
+        // Enforce 3-month window bounds
+        if (newDate.getTime() < MIN_DATE.getTime()) newDate = new Date(MIN_DATE);
+        if (newDate.getTime() > MAX_DATE.getTime()) newDate = new Date(MAX_DATE);
+
+        currentDate = new Date(newDate);
+        currentDate.setHours(0, 0, 0, 0);
+
+        updateDateNavigatorUI();
+        const dateStr = formatDateString(currentDate);
+        fetchDateLog(dateStr);
+      }
+
+      function navigateDay(delta) {
+        const next = new Date(currentDate);
+        next.setDate(next.getDate() + delta);
+        selectDate(next);
+      }
+
+      // -------------------------------------------------------------
+      // Event Listeners Setup
+      // -------------------------------------------------------------
+      function setupEventListeners() {
+        // Day Navigation
+        els.btnPrevDay.addEventListener('click', () => navigateDay(-1));
+        els.btnNextDay.addEventListener('click', () => navigateDay(1));
+        els.btnJumpToday.addEventListener('click', () => selectDate(TODAY));
+
+        // Keyboard navigation (Left/Right arrow when not typing)
+        window.addEventListener('keydown', (e) => {
+          if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            navigateDay(-1);
+          } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            navigateDay(1);
+          }
+        });
+
+        // Date Picker Change
+        els.datePickerInput.addEventListener('change', (e) => {
+          if (e.target.value) {
+            selectDate(parseDateString(e.target.value));
+          }
+        });
+
+        // Habit Checkboxes change
+        [els.chkGym, els.chkRunning, els.chkCoding, els.chkStudying, els.chkExtraWork].forEach(chk => {
+          chk.addEventListener('change', () => {
+            currentLog.gym = els.chkGym.checked;
+            currentLog.running = els.chkRunning.checked;
+            currentLog.coding = els.chkCoding.checked;
+            currentLog.studying = els.chkStudying.checked;
+            currentLog.extraWork = els.chkExtraWork.checked;
+            updateChecklistUI();
+            updateWeeklySummaryUI();
+            scheduleAutoSave();
+          });
+        });
+
+        // Nutrition Inputs change
+        els.numProtein.addEventListener('input', () => {
+          currentLog.protein = Number(els.numProtein.value) || 0;
+          updateNutritionUI();
+          scheduleAutoSave();
+        });
+
+        els.numCalories.addEventListener('input', () => {
+          currentLog.calories = Number(els.numCalories.value) || 0;
+          updateNutritionUI();
+          scheduleAutoSave();
+        });
+
+        els.numCalorieLimit.addEventListener('input', () => {
+          const limit = Number(els.numCalorieLimit.value) || 2000;
+          localStorage.setItem(STORAGE_KEY_CALORIE_LIMIT, limit);
+          updateNutritionUI();
+        });
+
+        // Quick Adds for Protein
+        document.querySelectorAll('.btn-quick-add-protein').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const amount = Number(btn.getAttribute('data-amount')) || 10;
+            const current = Number(els.numProtein.value) || 0;
+            els.numProtein.value = current + amount;
+            currentLog.protein = current + amount;
+            updateNutritionUI();
+            scheduleAutoSave();
+          });
+        });
+
+        // Quick Adds for Calories
+        document.querySelectorAll('.btn-quick-add-calorie').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const amount = Number(btn.getAttribute('data-amount')) || 100;
+            const current = Number(els.numCalories.value) || 0;
+            els.numCalories.value = current + amount;
+            currentLog.calories = current + amount;
+            updateNutritionUI();
+            scheduleAutoSave();
+          });
+        });
+
+        // Notes Input change
+        els.txtDailyNotes.addEventListener('input', () => {
+          currentLog.notes = els.txtDailyNotes.value;
+          updateNotesCountUI(els.txtDailyNotes.value);
+          scheduleAutoSave();
+        });
+
+        // Quick Starter Prompts for Notes
+        document.querySelectorAll('.btn-note-tag').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const insertText = btn.getAttribute('data-insert') || '';
+            const current = els.txtDailyNotes.value;
+            const prefix = (current.length > 0 && !current.endsWith('\n')) ? '\n' : '';
+            els.txtDailyNotes.value = current + prefix + insertText;
+            currentLog.notes = els.txtDailyNotes.value;
+            els.txtDailyNotes.focus();
+            updateNotesCountUI(els.txtDailyNotes.value);
+            scheduleAutoSave();
+          });
+        });
+
+        // Clear Note button
+        els.btnClearNote.addEventListener('click', () => {
+          if (els.txtDailyNotes.value.length === 0) return;
+          els.txtDailyNotes.value = '';
+          currentLog.notes = '';
+          updateNotesCountUI('');
+          scheduleAutoSave();
+          showToast('Note cleared', 'info');
+        });
+
+        // Save Day Actions
+        els.btnSaveDay.addEventListener('click', () => saveCurrentLog(true));
+        els.btnHeaderSave.addEventListener('click', () => saveCurrentLog(true));
+
+        // Reset Day Action (In-place confirmation to avoid iframe window.confirm blocking)
+        let resetConfirmTimeout = null;
+        let isAwaitingResetConfirm = false;
+
+        els.btnClearDay.addEventListener('click', () => {
+          if (!isAwaitingResetConfirm) {
+            isAwaitingResetConfirm = true;
+            els.btnClearDay.textContent = 'Confirm Reset?';
+            els.btnClearDay.classList.add('bg-rose-50', 'text-rose-700', 'border-rose-300');
+            els.btnClearDay.classList.remove('text-zinc-600', 'border-zinc-200');
+
+            resetConfirmTimeout = setTimeout(() => {
+              isAwaitingResetConfirm = false;
+              els.btnClearDay.textContent = 'Reset Day';
+              els.btnClearDay.classList.remove('bg-rose-50', 'text-rose-700', 'border-rose-300');
+              els.btnClearDay.classList.add('text-zinc-600', 'border-zinc-200');
+            }, 3000);
+            return;
+          }
+
+          // Confirmed
+          clearTimeout(resetConfirmTimeout);
+          isAwaitingResetConfirm = false;
+          els.btnClearDay.textContent = 'Reset Day';
+          els.btnClearDay.classList.remove('bg-rose-50', 'text-rose-700', 'border-rose-300');
+          els.btnClearDay.classList.add('text-zinc-600', 'border-zinc-200');
+
+          els.chkGym.checked = false;
+          els.chkRunning.checked = false;
+          els.chkCoding.checked = false;
+          els.chkStudying.checked = false;
+          els.chkExtraWork.checked = false;
+          els.numProtein.value = '';
+          els.numCalories.value = '';
+          els.txtDailyNotes.value = '';
+          currentLog = {
+            date: formatDateString(currentDate),
+            gym: false,
+            running: false,
+            coding: false,
+            studying: false,
+            extraWork: false,
+            protein: 0,
+            calories: 0,
+            notes: ''
+          };
+          updateChecklistUI();
+          updateNutritionUI();
+          updateNotesUI();
+          updateWeeklySummaryUI();
+          saveCurrentLog(true);
+          showToast('Day reset to zero', 'info');
+        });
+
+        // API Settings Modal Handlers
+        els.btnOpenApiModal.addEventListener('click', () => {
+          els.inputApiBaseUrl.value = apiBaseUrl;
+          els.connectionTestResult.classList.add('hidden');
+          els.apiConfigModal.classList.remove('hidden');
+        });
+
+        els.btnCloseApiModal.addEventListener('click', () => {
+          els.apiConfigModal.classList.add('hidden');
+        });
+
+        els.apiConfigModal.addEventListener('click', (e) => {
+          if (e.target === els.apiConfigModal) {
+            els.apiConfigModal.classList.add('hidden');
+          }
+        });
+
+        // Preset API buttons
+        document.querySelectorAll('.btn-api-preset').forEach(btn => {
+          btn.addEventListener('click', () => {
+            els.inputApiBaseUrl.value = btn.getAttribute('data-url');
+          });
+        });
+
+        // Save API Config
+        els.btnSaveApiConfig.addEventListener('click', () => {
+          const newUrl = els.inputApiBaseUrl.value.trim() || 'http://localhost:5000';
+          apiBaseUrl = newUrl;
+          localStorage.setItem(STORAGE_KEY_API, apiBaseUrl);
+          updateBackendStatusUI();
+          els.apiConfigModal.classList.add('hidden');
+          showToast(`API Base URL set to ${apiBaseUrl}`, 'info');
+          fetchDateLog(formatDateString(currentDate));
+        });
+
+        // Test Connection
+        els.btnTestConnection.addEventListener('click', async () => {
+          const testUrl = els.inputApiBaseUrl.value.trim() || 'http://localhost:5000';
+          els.btnTestConnection.disabled = true;
+          els.btnTestConnection.textContent = 'Testing...';
+          els.connectionTestResult.classList.remove('hidden', 'bg-rose-50', 'text-rose-800', 'border-rose-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+
+          try {
+            const todayStr = formatDateString(TODAY);
+            const res = await fetch(`${testUrl.replace(/\/+$/, '')}/api/logs/${todayStr}`, {
+              method: 'GET',
+              headers: { 'Accept': 'application/json' },
+              signal: AbortSignal.timeout(3000)
+            });
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            await res.json();
+
+            els.connectionTestResult.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+            els.connectionTestResult.textContent = `✓ Successfully reached backend at ${testUrl}! (Status: ${res.status})`;
+          } catch (err) {
+            els.connectionTestResult.classList.add('bg-rose-50', 'text-rose-800', 'border-rose-200');
+            els.connectionTestResult.innerHTML = `✕ Failed to reach ${testUrl}: ${err.message}<br><span class="text-[10px] text-rose-600 mt-1 block">Ensure your server is running or try running <code>node backend/server.js</code></span>`;
+          } finally {
+            els.btnTestConnection.disabled = false;
+            els.btnTestConnection.textContent = 'Test Connection';
+          }
+        });
+
+        // Seed realistic demo logs for the week
+        els.btnSeedDemoWeek.addEventListener('click', () => {
+          const startOfWeek = getStartOfWeek(currentDate);
+          const sampleNotes = [
+            "Heavy leg day! Squats felt explosive. Prepped high-protein lunch.",
+            "Morning interval sprints on the track. Great cardio pace and energy.",
+            "Upper body push session. Hit 105g protein target with whey and salmon.",
+            "Light recovery jog. Read 2 chapters of system design architecture.",
+            "Friday deadlift session. Cleared sprint backlog and shipped new feature.",
+            "Weekend trail run. 6.2km completed in brisk weather. Feeling refreshed.",
+            "Active recovery day. Meal prep, hydration and weekly priorities planning."
+          ];
+
+          for (let i = 0; i < 7; i++) {
+            const d = new Date(startOfWeek);
+            d.setDate(startOfWeek.getDate() + i);
+            const str = formatDateString(d);
+            // Simulate realistic habits: gym on Mon, Wed, Fri; run on Tue, Thu, Sat
+            const dayIdx = d.getDay(); // 0 is Sun, 1 is Mon...
+            localLogsCache[str] = {
+              date: str,
+              gym: dayIdx === 1 || dayIdx === 3 || dayIdx === 5,
+              running: dayIdx === 2 || dayIdx === 4 || dayIdx === 6,
+              coding: dayIdx >= 1 && dayIdx <= 5,
+              studying: dayIdx === 2 || dayIdx === 4 || dayIdx === 0,
+              extraWork: dayIdx === 3,
+              protein: 85 + (i * 5) % 25,
+              calories: 1850 + (i * 120) % 400,
+              notes: sampleNotes[i] || ''
+            };
+          }
+          saveLocalCache();
+          els.apiConfigModal.classList.add('hidden');
+          showToast('Sample week logs generated successfully!', 'success');
+          fetchDateLog(formatDateString(currentDate));
+        });
+      }
+
+      // -------------------------------------------------------------
+      // Initial Setup
+      // -------------------------------------------------------------
+      function init() {
+        // Restore saved calorie limit
+        const savedLimit = localStorage.getItem(STORAGE_KEY_CALORIE_LIMIT);
+        if (savedLimit) els.numCalorieLimit.value = savedLimit;
+
+        // Configure date picker limits
+        const minStr = formatDateString(MIN_DATE);
+        const maxStr = formatDateString(MAX_DATE);
+        els.datePickerInput.min = minStr;
+        els.datePickerInput.max = maxStr;
+
+        els.windowStartLabel.textContent = MIN_DATE.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        els.windowEndLabel.textContent = MAX_DATE.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+        setupEventListeners();
+        updateBackendStatusUI();
+        updateDateNavigatorUI();
+
+        // Initial fetch for today's date
+        fetchDateLog(formatDateString(TODAY));
+      }
+
+      // Run on DOM ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+
+    })();
+  </script>
+</body>
+</html>

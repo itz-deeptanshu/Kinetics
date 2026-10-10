@@ -1,0 +1,110 @@
+{
+  "2026-10-02": {
+    "date": "2026-10-02",
+    "gym": true,
+    "running": false,
+    "coding": true,
+    "studying": true,
+    "extraWork": true,
+    "protein": 110,
+    "calories": 2100,
+    "notes": "🏋️ Workout: Hit High intensity Chest(Upper and Mid chest) and Back(Lats, Rows) along with 5 min cardio and 100 jump ropes.\nStudy: Completed Intro to Doubly linked list\nHit protein PR\nSteps: 10k+",
+    "updatedAt": "2026-10-02T18:00:52.830Z"
+  },
+  "2026-10-01": {
+    "date": "2026-10-01",
+    "gym": false,
+    "running": false,
+    "coding": true,
+    "studying": true,
+    "extraWork": true,
+    "protein": 100,
+    "calories": 2300,
+    "notes": "Steps: 10k+",
+    "updatedAt": "2026-10-02T17:57:41.781Z"
+  },
+  "2026-10-03": {
+    "date": "2026-10-03",
+    "gym": false,
+    "running": false,
+    "coding": true,
+    "studying": true,
+    "extraWork": true,
+    "protein": 90,
+    "calories": 2400,
+    "notes": "",
+    "updatedAt": "2026-10-03T15:59:25.357Z"
+  },
+  "2026-10-04": {
+    "date": "2026-10-04",
+    "gym": true,
+    "running": false,
+    "coding": true,
+    "studying": true,
+    "extraWork": true,
+    "protein": 105,
+    "calories": 2600,
+    "notes": "🏋️ Workout: Shoulder side and rear + Arms(Biceps brac and short+Triceps pull and skullcrusher)\n15 min incline walk\nCoding: Completed Sorting a linked list of 0's 1's 2's and removal of nth node",
+    "updatedAt": "2026-10-04T15:33:17.084Z"
+  },
+  "2026-10-05": {
+    "date": "2026-10-05",
+    "gym": false,
+    "running": true,
+    "coding": true,
+    "studying": true,
+    "extraWork": false,
+    "protein": 90,
+    "calories": 2400,
+    "notes": "Managed to complete 17000 steps\n5km run\n",
+    "updatedAt": "2026-10-05T17:47:16.429Z"
+  },
+  "2026-10-06": {
+    "date": "2026-10-06",
+    "gym": true,
+    "running": false,
+    "coding": true,
+    "studying": true,
+    "extraWork": true,
+    "protein": 115,
+    "calories": 1900,
+    "notes": "🏋️ Workout: Back(Lat Pull, T-Bar Rows and Normal Rows) and Chest(Incline Press and Bench Press) with 20 min incline walk at 3.5",
+    "updatedAt": "2026-10-06T15:56:01.581Z"
+  },
+  "2026-10-07": {
+    "date": "2026-10-07",
+    "gym": true,
+    "running": true,
+    "coding": true,
+    "studying": true,
+    "extraWork": true,
+    "protein": 20,
+    "calories": 1920,
+    "notes": "",
+    "updatedAt": "2026-10-08T04:13:25.180Z"
+  },
+  "2026-10-08": {
+    "date": "2026-10-08",
+    "gym": true,
+    "running": false,
+    "coding": true,
+    "studying": true,
+    "extraWork": true,
+    "protein": 120,
+    "calories": 2000,
+    "notes": "",
+    "updatedAt": "2026-10-08T17:19:54.981Z"
+  },
+  "2026-10-09": {
+    "date": "2026-10-09",
+    "gym": false,
+    "running": true,
+    "coding": true,
+    "studying": true,
+    "extraWork": false,
+    "protein": 85,
+    "calories": 1900,
+    "notes": "",
+    "updatedAt": "2026-10-10T05:12:59.122Z"
+  }
+}
